@@ -4,18 +4,18 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.TaskContainer;
 
+@SuppressWarnings("unused") // used via build.gradle.kts
 public class FemtojarGradlePlugin implements Plugin<Project> {
 
     @Override
-    public void apply(Project project) {
-        // Create extension
-        FemtojarExtension extension = project.getExtensions().create(
+    public void apply(final Project project) {
+
+        final FemtojarExtension extension = project.getExtensions().create(
             "femtojar",
             FemtojarExtension.class
         );
 
-        // Register task
-        TaskContainer tasks = project.getTasks();
+        final TaskContainer tasks = project.getTasks();
         tasks.register("reencodeJars", ReencodeJarsTask.class, task -> {
             task.setGroup("femtojar");
             task.setDescription("Re-encode JAR files with custom class loader and compression.");

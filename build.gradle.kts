@@ -35,11 +35,10 @@ gradlePlugin {
 publishing {
     repositories {
         maven {
-            name = "GitHubPackages"
+            name = "github-packages"
             url = uri("https://maven.pkg.github.com/DarkAtra/femtojar-gradle")
             credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }

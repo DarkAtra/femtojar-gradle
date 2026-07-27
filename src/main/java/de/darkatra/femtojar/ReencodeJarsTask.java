@@ -8,6 +8,7 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -46,47 +47,44 @@ public class ReencodeJarsTask extends DefaultTask {
 
     @TaskAction
     public void reencodeJars() {
+
         if (skip.get()) {
             getLogger().lifecycle("Skipping femtojar execution");
             return;
         }
 
         // Get the extension to access jars configuration
-        FemtojarExtension extension = getProject().getExtensions().getByType(FemtojarExtension.class);
+        final FemtojarExtension extension = getProject().getExtensions().getByType(FemtojarExtension.class);
 
         // Process each jar entry
-        for (JarEntry entry : extension.getJars()) {
+        for (final JarEntry entry : extension.getJars()) {
             try {
                 reencodeSingleJar(entry);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 throw new GradleException("Failed to re-encode JAR: " + e.getMessage(), e);
             }
         }
     }
 
-    private void reencodeSingleJar(JarEntry entry) throws IOException {
-        // Resolve input and output paths
-        Path inputPath = resolvePath(entry.getIn());
-        Path outputPath = entry.getOut() != null ? resolvePath(entry.getOut()) : inputPath;
+    private void reencodeSingleJar(final JarEntry entry) throws IOException {
 
-        // Validate input file exists
+        final Path inputPath = resolvePath(entry.getIn());
+        final Path outputPath = entry.getOut() != null ? resolvePath(entry.getOut()) : inputPath;
+
         if (!Files.exists(inputPath)) {
             throw new GradleException("Input JAR does not exist: " + inputPath);
         }
 
-        // Parse compression mode
-        CompressionMode compression = parseCompressionMode(entry.getCompressionMode());
-        boolean bundleResources = entry.getBundleResources() != null ?
+        final CompressionMode compression = parseCompressionMode(entry.getCompressionMode());
+        final boolean bundleResources = entry.getBundleResources() != null ?
             entry.getBundleResources() : getBundleResources().get();
 
         try {
-            // Create JarReencoder instance and reencode
-            JarReencoder reencoder = new JarReencoder();
+            final JarReencoder reencoder = new JarReencoder();
 
-            // Determine if we're doing in-place or out-of-place reencoding
-            boolean inPlace = inputPath.equals(outputPath);
+            final boolean inPlace = inputPath.equals(outputPath);
 
-            JarReencoder.ReencodeOptions reencodeOptions = new JarReencoder.ReencodeOptions(
+            final JarReencoder.ReencodeOptions reencodeOptions = new JarReencoder.ReencodeOptions(
                 compression.useZopfli(),
                 compression.zopfliIterations(),
                 bundleResources,
@@ -94,28 +92,27 @@ public class ReencodeJarsTask extends DefaultTask {
                 false,
                 null
             );
+
             if (inPlace) {
-                // In-place reencoding
                 reencoder.reencodeInPlaceBundled(inputPath, reencodeOptions);
             } else {
-                // Out-of-place reencoding
                 rewriteJarBundled(reencoder, inputPath, outputPath, reencodeOptions);
             }
 
             getLogger().lifecycle("JAR re-encoding completed for: " + inputPath);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new GradleException("Failed to re-encode JAR: " + e.getMessage(), e);
         }
     }
 
     private void rewriteJarBundled(
-        JarReencoder reencoder,
-        Path inputPath,
-        Path outputPath,
-        JarReencoder.ReencodeOptions reencodeOptions
+        final JarReencoder reencoder,
+        final Path inputPath,
+        final Path outputPath,
+        final JarReencoder.ReencodeOptions reencodeOptions
     ) throws Exception {
 
-        Method rewriteJarBundled = JarReencoder.class.getDeclaredMethod(
+        final Method rewriteJarBundled = JarReencoder.class.getDeclaredMethod(
             "rewriteJarBundled",
             Path.class,
             Path.class,
@@ -125,8 +122,8 @@ public class ReencodeJarsTask extends DefaultTask {
 
         try {
             rewriteJarBundled.invoke(reencoder, inputPath, outputPath, reencodeOptions);
-        } catch (InvocationTargetException e) {
-            Throwable targetException = e.getTargetException();
+        } catch (final InvocationTargetException e) {
+            final Throwable targetException = e.getTargetException();
             if (targetException instanceof Exception) {
                 throw (Exception) targetException;
             }
@@ -134,28 +131,29 @@ public class ReencodeJarsTask extends DefaultTask {
         }
     }
 
-    private CompressionMode parseCompressionMode(String modeString) {
+    private CompressionMode parseCompressionMode(@Nullable final String modeString) {
+
         if (modeString == null || modeString.isEmpty()) {
             return CompressionMode.DEFAULT;
         }
 
         try {
             return CompressionMode.parse(modeString);
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             throw new GradleException("Invalid compression mode: " + modeString, e);
         }
     }
 
-    private Path resolvePath(String path) {
+    private Path resolvePath(@Nullable final String path) {
+
         if (path == null) {
             throw new GradleException("JAR path must not be null");
         }
 
-        Path resolvedPath = Paths.get(path);
+        final Path resolvedPath = Paths.get(path);
         if (resolvedPath.isAbsolute()) {
             return resolvedPath;
         } else {
-            // Resolve relative to project directory
             return getProject().getProjectDir().toPath().resolve(resolvedPath).normalize();
         }
     }
