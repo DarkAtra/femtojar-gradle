@@ -21,7 +21,7 @@ class FemtojarGradlePluginTest {
         assertNotNull(project.extensions.getByType(FemtojarExtension::class.java))
 
         // Verify task is registered
-        assertNotNull(project.tasks.findByName("reencodeJars"))
+        assertNotNull(project.tasks.findByName("reencodeJar"))
     }
 
     @Test

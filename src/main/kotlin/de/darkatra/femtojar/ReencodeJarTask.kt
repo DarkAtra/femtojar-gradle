@@ -4,75 +4,77 @@ import me.bechberger.femtojar.CompressionMode
 import me.bechberger.femtojar.JarReencoder
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 
 @CacheableTask
-open class ReencodeJarsTask : DefaultTask() {
+abstract class ReencodeJarTask : DefaultTask() {
 
     @get:Input
-    val skip: Property<Boolean> = project.objects.property(Boolean::class.java)
+    abstract val skip: Property<Boolean>
 
     @get:Input
-    val compressionMode: Property<String> = project.objects.property(String::class.java)
+    abstract val compressionMode: Property<String>
 
     @get:Input
-    val bundleResources: Property<Boolean> = project.objects.property(Boolean::class.java)
+    abstract val bundleResources: Property<Boolean>
+
+    @get:InputFile
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val inputFile: RegularFileProperty
+
+    @get:OutputFile
+    @get:Optional
+    abstract val outputFile: RegularFileProperty
 
     @TaskAction
-    fun reencodeJars() {
+    fun reencodeJar() {
 
         if (skip.get()) {
             logger.lifecycle("Skipping femtojar execution")
             return
         }
 
-        // Get the extension to access jars configuration
-        val extension = project.extensions.getByType(FemtojarExtension::class.java)
+        val inputPath = inputFile.orNull?.asFile?.toPath()
+            ?: throw GradleException("Input JAR path must not be null")
+        val outputPath = outputFile.orNull?.asFile?.toPath()
+            ?: throw GradleException("Output JAR path must not be null")
 
-        // Process each jar entry
-        for (entry in extension.jars) {
-            reencodeSingleJar(entry)
+        if (inputPath.toAbsolutePath().normalize() == outputPath.toAbsolutePath().normalize()) {
+            throw GradleException("Input and output JAR paths must be different: $inputPath")
         }
-    }
-
-    private fun reencodeSingleJar(entry: JarEntry) {
-
-        val inputPath = resolvePath(entry.`in`)
-        val outputPath = entry.out?.let { resolvePath(it) } ?: inputPath
 
         if (!Files.exists(inputPath)) {
             throw GradleException("Input JAR does not exist: $inputPath")
         }
 
-        val compression = parseCompressionMode(entry.compressionMode)
-        val useBundleResources = entry.bundleResources ?: bundleResources.get()
+        val compression = parseCompressionMode(compressionMode.orNull)
 
         try {
             val reencoder = JarReencoder()
 
-            val inPlace = inputPath == outputPath
-
             val reencodeOptions = JarReencoder.ReencodeOptions(
                 compression.useZopfli(),
                 compression.zopfliIterations(),
-                useBundleResources,
+                bundleResources.get(),
                 "gradle-plugin",
                 false,
                 null
             )
 
-            if (inPlace) {
-                reencoder.reencodeInPlaceBundled(inputPath, reencodeOptions)
-            } else {
-                rewriteJarBundled(reencoder, inputPath, outputPath, reencodeOptions)
-            }
+            rewriteJarBundled(reencoder, inputPath, outputPath, reencodeOptions)
 
             logger.lifecycle("JAR re-encoding completed for: $inputPath")
         } catch (e: Exception) {
@@ -112,20 +114,6 @@ open class ReencodeJarsTask : DefaultTask() {
             CompressionMode.parse(modeString)
         } catch (e: IllegalArgumentException) {
             throw GradleException("Invalid compression mode: $modeString", e)
-        }
-    }
-
-    private fun resolvePath(path: String?): Path {
-
-        if (path == null) {
-            throw GradleException("JAR path must not be null")
-        }
-
-        val resolvedPath = Paths.get(path)
-        return if (resolvedPath.isAbsolute) {
-            resolvedPath
-        } else {
-            project.projectDir.toPath().resolve(resolvedPath).normalize()
         }
     }
 }

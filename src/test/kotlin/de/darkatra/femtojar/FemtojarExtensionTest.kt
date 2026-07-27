@@ -1,10 +1,12 @@
 package de.darkatra.femtojar
 
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.gradle.api.InvalidUserDataException
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
+import java.util.jar.Attributes
+import java.util.jar.JarOutputStream
+import java.util.jar.Manifest
 
 class FemtojarExtensionTest {
 
@@ -17,35 +19,78 @@ class FemtojarExtensionTest {
         assertThat(extension.skip.get()).isFalse()
         assertThat(extension.compressionMode.get()).isEqualTo("DEFAULT")
         assertThat(extension.bundleResources.get()).isTrue()
-        assertThat(extension.jars).isEmpty()
+        assertThat(extension.`in`).isNull()
+        assertThat(extension.out).isNull()
+        assertThat(extension.mainClass.orNull).isNull()
     }
 
     @Test
-    fun jarsContainerCreatesNamedEntriesWithoutDefaults() {
+    fun inputAndOutputPathsAreConfiguredDirectly() {
 
         val project = ProjectBuilder.builder().build()
         val extension = project.objects.newInstance(FemtojarExtension::class.java)
 
-        val entry = extension.jars.create("app")
-        entry.`in` = "input.jar"
+        extension.`in` = "input.jar"
+        extension.out = "build/output.jar"
 
-        assertThat(entry.name).isEqualTo("app")
-        assertThat(entry.`in`).isEqualTo("input.jar")
-        assertThat(entry.out).isNull()
-        assertThat(entry.compressionMode).isNull()
-        assertThat(entry.bundleResources).isNull()
-        assertThat(extension.jars.getByName("app")).isSameAs(entry)
+        assertThat(extension.`in`).isEqualTo("input.jar")
+        assertThat(extension.out).isEqualTo("build/output.jar")
     }
 
     @Test
-    fun jarsContainerRejectsDuplicateNames() {
+    fun mainClassIsAbsentWhenInputDoesNotExist() {
 
         val project = ProjectBuilder.builder().build()
         val extension = project.objects.newInstance(FemtojarExtension::class.java)
+        extension.`in` = "missing.jar"
 
-        extension.jars.create("app")
+        assertThat(extension.mainClass.orNull).isNull()
+    }
 
-        assertThatThrownBy { extension.jars.create("app") }
-            .isInstanceOf(InvalidUserDataException::class.java)
+    @Test
+    fun mainClassIsAbsentWhenInputHasNoManifest() {
+
+        val project = ProjectBuilder.builder().build()
+        val extension = project.objects.newInstance(FemtojarExtension::class.java)
+        createJar(project.projectDir.toPath().resolve("input.jar"))
+        extension.`in` = "input.jar"
+
+        assertThat(extension.mainClass.orNull).isNull()
+    }
+
+    @Test
+    fun mainClassIsAbsentWhenManifestHasNoMainClass() {
+
+        val project = ProjectBuilder.builder().build()
+        val extension = project.objects.newInstance(FemtojarExtension::class.java)
+        val manifest = Manifest().apply {
+            mainAttributes[Attributes.Name.MANIFEST_VERSION] = "1.0"
+        }
+        createJar(project.projectDir.toPath().resolve("input.jar"), manifest)
+        extension.`in` = "input.jar"
+
+        assertThat(extension.mainClass.orNull).isNull()
+    }
+
+    @Test
+    fun mainClassIsReadFromTheInputManifest() {
+
+        val project = ProjectBuilder.builder().build()
+        val extension = project.objects.newInstance(FemtojarExtension::class.java)
+        val manifest = Manifest().apply {
+            mainAttributes[Attributes.Name.MANIFEST_VERSION] = "1.0"
+            mainAttributes[Attributes.Name.MAIN_CLASS] = "example.Main"
+        }
+        createJar(project.projectDir.toPath().resolve("input.jar"), manifest)
+        extension.`in` = "input.jar"
+
+        assertThat(extension.mainClass.get()).isEqualTo("example.Main")
+    }
+
+    private fun createJar(path: java.nio.file.Path, manifest: Manifest? = null) {
+
+        val output = Files.newOutputStream(path)
+        val jar = if (manifest == null) JarOutputStream(output) else JarOutputStream(output, manifest)
+        jar.use { }
     }
 }

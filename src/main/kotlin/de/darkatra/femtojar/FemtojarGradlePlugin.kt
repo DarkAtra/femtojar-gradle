@@ -10,13 +10,15 @@ class FemtojarGradlePlugin : Plugin<Project> {
 
         val extension = project.extensions.create("femtojar", FemtojarExtension::class.java)
 
-        project.tasks.register("reencodeJars", ReencodeJarsTask::class.java) { task ->
+        project.tasks.register("reencodeJar", ReencodeJarTask::class.java) { task ->
             task.group = "femtojar"
             task.description = "Re-encode JAR files with custom class loader and compression."
 
             task.skip.set(extension.skip)
             task.compressionMode.set(extension.compressionMode)
             task.bundleResources.set(extension.bundleResources)
+            task.inputFile.set(extension.inputFile)
+            task.outputFile.set(extension.outputFile)
         }
     }
 }
