@@ -36,14 +36,6 @@ femtojar {
 
 Paths are resolved relative to the project directory. The input and output must be different paths, and the input JAR must exist when the task runs.
 
-The input JAR's manifest main class is exposed lazily as a read-only provider:
-
-```kotlin
-val mainClass = femtojar.mainClass.orNull
-```
-
-The provider has no value when the input is unset or missing, or when the JAR manifest has no `Main-Class` attribute.
-
 Re-encode the JAR with:
 
 ```shell
