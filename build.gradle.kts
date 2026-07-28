@@ -85,6 +85,6 @@ if (releaseVersion.isPresent) {
         }
 
         signAllPublications()
-        publishToMavenCentral()
+        publishToMavenCentral(automaticRelease = true)
     }
 }
