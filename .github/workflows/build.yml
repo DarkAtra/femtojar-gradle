@@ -1,0 +1,72 @@
+name: Build & Release
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - next
+    paths:
+      - '.github/workflows/**'
+      - 'gradle/**'
+      - 'src/**'
+      - '.releaserc.json'
+      - 'build.gradle.kts'
+      - 'gradle.properties'
+      - 'settings.gradle.kts'
+
+concurrency:
+  group: ci-main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Setup Java
+        uses: actions/setup-java@v5.6.0
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Run Tests
+        run: ./gradlew clean check
+
+  release:
+    name: Build and Release to Maven Central
+    runs-on: ubuntu-24.04
+    permissions:
+      # used by semantic release
+      contents: write
+    needs:
+      - verify
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
+
+      - name: Setup Java
+        uses: actions/setup-java@v5.6.0
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - id: semantic-release
+        name: Create new Release
+        uses: cycjimmy/semantic-release-action@v6.0.0
+        with:
+          extra_plugins: |
+            @semantic-release/exec
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.CENTRAL_PORTAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.CENTRAL_PORTAL_SECRET }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}

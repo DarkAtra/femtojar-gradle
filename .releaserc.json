@@ -1,0 +1,28 @@
+{
+    "branches": [
+        "main",
+        {
+            "name": "next",
+            "prerelease": true
+        }
+    ],
+    "plugins": [
+        "@semantic-release/commit-analyzer",
+        "@semantic-release/release-notes-generator",
+        [
+            "@semantic-release/exec",
+            {
+                "publishCmd": "RELEASE_VERSION=${nextRelease.version} ./gradlew publishToMavenCentral"
+            }
+        ],
+        [
+            "@semantic-release/github",
+            {
+                "successComment": false,
+                "releasedLabels": false,
+                "failComment": false,
+                "failTitle": false
+            }
+        ]
+    ]
+}

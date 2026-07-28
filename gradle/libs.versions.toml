@@ -3,6 +3,7 @@ kotlin = "2.3.21"
 femtojar = "0.1.6"
 junit = "6.1.1"
 assertj = "3.27.7"
+gradle-maven-publish-plugin = "0.37.0"
 
 [libraries]
 femtojar-core = { group = "me.bechberger", name = "femtojar", version.ref = "femtojar" }
@@ -13,3 +14,4 @@ assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "as
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+gradle-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "gradle-maven-publish-plugin" }
