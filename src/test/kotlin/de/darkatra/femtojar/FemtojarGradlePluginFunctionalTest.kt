@@ -35,7 +35,8 @@ class FemtojarGradlePluginFunctionalTest {
                 out = "build/output.jar"
             }
 
-            check(femtojar.mainClass.get() == "example.Main")
+            check(femtojar.originalMainClass.get() == "example.Main")
+            check(femtojar.bootstrapMainClass.get() == "me.bechberger.femtojar.rt.BundleBootstrap")
             """.trimIndent(),
         )
 

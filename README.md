@@ -44,15 +44,15 @@ Re-encode the JAR with:
 
 ## Configuration
 
-| Property             | Type               | Default                                       | Description                                                                                                |
-|----------------------|--------------------|-----------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `in`                 | `String?`          | unset                                         | Path to the executable input JAR.                                                                          |
-| `out`                | `String?`          | unset                                         | Path for the re-encoded output JAR.                                                                        |
-| `compressionMode`    | `String`           | `DEFAULT`                                     | Femtojar compression mode.                                                                                 |
-| `bundleResources`    | `Boolean`          | `true`                                        | Bundle non-`META-INF` resources into the compressed blob.                                                  |
-| `skip`               | `Boolean`          | `false`                                       | Skip re-encoding when the task executes.                                                                   |
-| `originalMainClass`  | `Provider<String>` | absent                                        | Read-only `Main-Class` value from the input JAR manifest.                                                  |
-| `bootstrapMainClass` | `Provider<String>` | `"me.bechberger.femtojar.rt.BundleBootstrap"` | Read-only `Main-Class` of the custom classloader. This one should be used when running the compressed jar. |
+| Property             | Type               | Default                                     | Description                                                                                                |
+|----------------------|--------------------|---------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `in`                 | `String?`          | unset                                       | Path to the executable input JAR.                                                                          |
+| `out`                | `String?`          | unset                                       | Path for the re-encoded output JAR.                                                                        |
+| `compressionMode`    | `String`           | `DEFAULT`                                   | Femtojar compression mode.                                                                                 |
+| `bundleResources`    | `Boolean`          | `true`                                      | Bundle non-`META-INF` resources into the compressed blob.                                                  |
+| `skip`               | `Boolean`          | `false`                                     | Skip re-encoding when the task executes.                                                                   |
+| `originalMainClass`  | `Provider<String>` | absent                                      | Read-only `Main-Class` value from the input JAR manifest.                                                  |
+| `bootstrapMainClass` | `Provider<String>` | `me.bechberger.femtojar.rt.BundleBootstrap` | Read-only `Main-Class` of the custom classloader. This one should be used when running the compressed jar. |
 
 Both `in` and `out` are required unless `skip` is `true`. Invalid compression modes fail the task.
 
