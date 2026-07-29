@@ -21,7 +21,8 @@ class FemtojarExtensionTest {
         assertThat(extension.bundleResources.get()).isTrue()
         assertThat(extension.`in`).isNull()
         assertThat(extension.out).isNull()
-        assertThat(extension.mainClass.orNull).isNull()
+        assertThat(extension.originalMainClass.orNull).isNull()
+        assertThat(extension.bootstrapMainClass.orNull).isEqualTo("me.bechberger.femtojar.rt.BundleBootstrap")
     }
 
     @Test
@@ -44,7 +45,7 @@ class FemtojarExtensionTest {
         val extension = project.objects.newInstance(FemtojarExtension::class.java)
         extension.`in` = "missing.jar"
 
-        assertThat(extension.mainClass.orNull).isNull()
+        assertThat(extension.originalMainClass.orNull).isNull()
     }
 
     @Test
@@ -55,7 +56,7 @@ class FemtojarExtensionTest {
         createJar(project.projectDir.toPath().resolve("input.jar"))
         extension.`in` = "input.jar"
 
-        assertThat(extension.mainClass.orNull).isNull()
+        assertThat(extension.originalMainClass.orNull).isNull()
     }
 
     @Test
@@ -69,7 +70,7 @@ class FemtojarExtensionTest {
         createJar(project.projectDir.toPath().resolve("input.jar"), manifest)
         extension.`in` = "input.jar"
 
-        assertThat(extension.mainClass.orNull).isNull()
+        assertThat(extension.originalMainClass.orNull).isNull()
     }
 
     @Test
@@ -84,7 +85,7 @@ class FemtojarExtensionTest {
         createJar(project.projectDir.toPath().resolve("input.jar"), manifest)
         extension.`in` = "input.jar"
 
-        assertThat(extension.mainClass.get()).isEqualTo("example.Main")
+        assertThat(extension.originalMainClass.get()).isEqualTo("example.Main")
     }
 
     private fun createJar(path: java.nio.file.Path, manifest: Manifest? = null) {

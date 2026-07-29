@@ -1,5 +1,6 @@
 package de.darkatra.femtojar
 
+import me.bechberger.femtojar.rt.BundleBootstrap
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
@@ -41,7 +42,10 @@ open class FemtojarExtension @Inject constructor(
     val compressionMode: Property<String> = objects.property(String::class.java).convention("DEFAULT")
     val bundleResources: Property<Boolean> = objects.property(Boolean::class.java).convention(true)
 
-    val mainClass: Provider<String> = providers.of(MainClassValueSource::class.java) { spec ->
+    val originalMainClass: Provider<String> = providers.of(MainClassValueSource::class.java) { spec ->
         spec.parameters.inputFile.set(inputFile)
+    }
+    val bootstrapMainClass: Provider<String> = providers.provider {
+        BundleBootstrap::class.qualifiedName!!
     }
 }
